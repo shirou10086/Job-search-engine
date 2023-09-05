@@ -4,6 +4,8 @@ import json
 import numpy as np
 import pandas as pd
 from pymongo import MongoClient
+from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split
 
 
 def recommend(userprofile):
@@ -41,3 +43,20 @@ def recommend(userprofile):
                 ans.append((document.get('job_title', None),document.get('job_publisher', None),document.get('job_id', None),document.get('employer_name', None),document.get('job_posted_at_timestamp', None),document.get('job_employment_type', None),document.get('job_job_title', None),document.get('job_city', None),document.get('job_state', None)))
     return json.dumps(list(set(ans)))
 #print(recommend("researcher  new york"))
+# svm recommend
+
+X_train = np.tile(job_vectors, (8, 1))
+y_train = user_interactions[:8].flatten()
+
+X_test = np.tile(job_vectors, (2, 1))
+y_test = user_interactions[8:].flatten()
+
+clf = SVC(probability=True)
+clf.fit(X_train, y_train)
+
+recommendations = clf.predict_proba(X_test)[:, 1]
+recommendations = recommendations.reshape(2, -1)
+
+for i in range(2):
+    recommended_jobs = np.argsort(recommendations[i])[::-1]
+    print(f"Recommended jobs for user {i+9}: {recommended_jobs}")
